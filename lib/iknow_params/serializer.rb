@@ -1,197 +1,266 @@
+require 'active_support'
+require 'active_support/core_ext/module/delegation'
+require 'tzinfo'
+
 module IknowParams
 class Serializer
-  def self.dump(val)
+  attr_reader :clazz
+
+  def initialize(clazz)
+    @clazz = clazz
+  end
+
+  def dump(val)
     matches_type!(val)
     val.to_s
   end
 
-  def self.load(val)
+  def load(val)
     raise StandardError.new('unimplemented')
   end
 
-  def self.matches_type?(val)
+  def matches_type?(val)
     val.is_a?(clazz)
   end
 
-  def self.matches_type!(val)
+  def matches_type!(val)
     unless matches_type?(val)
-      raise ArgumentError.new("Incorrect type for #{self.name}: #{val.inspect}:#{val.class.name}")
+      raise ArgumentError.new("Incorrect type for #{self.class.name}: #{val.inspect}:#{val.class.name}")
     end
     true
   end
 
-  def self.clazz
-    raise StandardError.new('unimplemented')
+  class << self
+    delegate :load, :dump, to: :singleton
+
+    def singleton
+      raise ArgumentError.new("Singleton instance not defined for abstract serializer '#{self.name}'")
+    end
+
+    private
+
+    def set_singleton
+      instance = self.new
+      define_singleton_method(:singleton){ instance }
+    end
   end
 
   class String < Serializer
-    def self.clazz
-      ::String
+    def initialize
+      super(::String)
     end
 
-    def self.load(str)
+    def load(str)
       str
     end
+
+    set_singleton
   end
 
   class Integer < Serializer
-    def self.clazz
-      ::Integer
+    def initialize
+      super(::Integer)
     end
 
-    def self.load(str)
+    def load(str)
       Integer(str)
     end
+
+    set_singleton
   end
+
 
   class Float < Serializer
-    def self.clazz
-      ::Float
+    def initialize
+      super(::Float)
     end
 
-    def self.load(str)
+    def load(str)
       Float(str)
     end
+
+    set_singleton
   end
+
 
   class Boolean < Serializer
-    def self.load(str)
-      val = ServiceHelper.boolean(str)
+    def initialize
+      super(nil)
+    end
 
-      unless matches_type?(val)
+    def load(str)
+      str = str.downcase if str.is_a?(String)
+
+      if ['false', 'no', 'off', false, '0', 0].include?(str)
+        false
+      elsif ['true', 'yes', 'on', true, '1', 1].include?(str)
+        true
+      else
         raise ArgumentError.new("Invalid boolean: #{str.inspect}")
       end
-
-      val
     end
 
-    def self.matches_type?(val)
+    def matches_type?(val)
       [true, false].include?(val)
     end
+
+    set_singleton
   end
 
-  class Numeric < Float
-    def self.clazz
-      ::Numeric
+
+  class Numeric < Serializer
+    def initialize
+      super(::Numeric)
     end
+
+    def load(str)
+      Float(str)
+    end
+
+    set_singleton
   end
+
 
   class Hash < Serializer
-    def self.clazz
-      ::Hash
+    def initialize
+      super(::Hash)
     end
 
-    def self.load(str)
+    def load(str)
       JSON.parse(str)
     end
 
-    def self.dump(val)
+    def dump(val)
       matches_type!(val)
       JSON.dump(val)
     end
+
+    set_singleton
   end
+
 
   # Abstract serializer for ISO8601 dates and times
   class ISO8601 < Serializer
-    def self.load(str)
+    def load(str)
       clazz.parse(str)
     end
 
-    def self.dump(val)
+    def dump(val)
       matches_type!(val)
       val.iso8601
     end
   end
 
   class Date < ISO8601
-    def self.clazz
-      ::Date
+    def initialize
+      super(::Date)
     end
 
+    set_singleton
   end
+
 
   class Time < ISO8601
-    def self.clazz
-      ::Time
+    def initialize
+      super(::Time)
     end
+
+    set_singleton
   end
 
+
   class Timezone < Serializer
-    def self.clazz
-      ::TZInfo::Timezone
+    def initialize
+      super(::TZInfo::Timezone)
     end
 
-    def self.load(str)
+    def load(str)
       TZInfo::Timezone.get(str)
     end
 
-    def self.dump(val)
+    def dump(val)
       matches_type!(val)
       val.identifier
     end
+
+    set_singleton
   end
 
+
   # Abstract serializer for JSON structures conforming to a specified
-  # schema. Implementors must override `self.schema`
+  # schema.
   class JsonWithSchema < Serializer
-    def self.schema
-      raise StandardError.new("Unimplemented")
+    attr_reader :schema
+    def initialize(schema)
+      @schema = schema
+      super(nil)
     end
 
-    def self.load(str)
+    def load(str)
       matches_type!(str)
       JSON.parse(str)
     end
 
-    def self.dump(val)
+    def dump(val)
       matches_type!(val)
       JSON.dump(val)
     end
 
-    def self.matches_type!(val)
+    def matches_type!(val)
       JSON::Validator.validate!(schema, val, validate_schema: !Rails.env.production?)
     end
   end
 
 
-  ## Abstract serializer for `ActsAsEnum` constants. Implementors must override
-  ## `self.clazz`.
+  ## Abstract serializer for `ActsAsEnum` constants.
   class ActsAsEnum < Serializer
-    def self.load(str)
+    def load(str)
       clazz.value_of!(str)
     end
 
-    def self.dump(val)
+    def dump(val)
       matches_type!(val)
       val.enum_constant
     end
   end
 
+  ## Abstract serializer for `renum` constants.
+  class Renum < Serializer
+    def load(str)
+      val = clazz.with_name(str)
+      if val.nil?
+        raise ArgumentError.new("Invalid enumeration constant: '#{str}'")
+      end
+      val
+    end
+
+    def dump(val)
+      matches_type!(val)
+      val.name
+    end
+  end
+
   # Abstract serializer for members of a fixed set of lowercase strings,
-  # case-normalized on parse. Implementors must override `self.members`.
+  # case-normalized on parse.
   class StringEnum < Serializer
-    def self.members
-      raise StandardError.new('unimplemented')
+    def initialize(*members)
+      @member_set = members.map(&:downcase).to_set.freeze
+      super(nil)
     end
 
-    def self.member?(m)
-      @member_set ||= members.map(&:downcase).to_set
-      @member_set.include?(m)
-    end
-
-    def self.load(str)
+    def load(str)
       val = str.to_s.downcase
       matches_type!(val)
       val
     end
 
-    def self.dump(val)
+    def dump(val)
       matches_type!(val)
       val
     end
 
-    def self.matches_type?(str)
-      str.is_a?(String) && self.member?(str)
+    def matches_type?(str)
+      str.is_a?(String) && @member_set.include?(str)
     end
   end
 end
