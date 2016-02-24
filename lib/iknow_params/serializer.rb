@@ -10,9 +10,13 @@ class Serializer
     @clazz = clazz
   end
 
-  def dump(val)
+  def dump(val, json: false)
     matches_type!(val)
-    val.to_s
+    if(json && self.class.json_value?)
+      val
+    else
+      val.to_s
+    end
   end
 
   def load(val)
@@ -37,11 +41,19 @@ class Serializer
       raise ArgumentError.new("Singleton instance not defined for abstract serializer '#{self.name}'")
     end
 
+    def json_value?
+      false
+    end
+
     private
 
-    def set_singleton
+    def set_singleton!
       instance = self.new
       define_singleton_method(:singleton){ instance }
+    end
+
+    def json_value!
+      define_singleton_method(:json_value?){ true }
     end
   end
 
@@ -54,7 +66,8 @@ class Serializer
       str
     end
 
-    set_singleton
+    set_singleton!
+    json_value!
   end
 
   class Integer < Serializer
@@ -66,7 +79,8 @@ class Serializer
       Integer(str)
     end
 
-    set_singleton
+    set_singleton!
+    json_value!
   end
 
 
@@ -79,7 +93,8 @@ class Serializer
       Float(str)
     end
 
-    set_singleton
+    set_singleton!
+    json_value!
   end
 
 
@@ -89,7 +104,7 @@ class Serializer
     end
 
     def load(str)
-      str = str.downcase if str.is_a?(String)
+      str = str.downcase if str.is_a?(::String)
 
       if ['false', 'no', 'off', false, '0', 0].include?(str)
         false
@@ -104,7 +119,8 @@ class Serializer
       [true, false].include?(val)
     end
 
-    set_singleton
+    set_singleton!
+    json_value!
   end
 
 
@@ -117,27 +133,9 @@ class Serializer
       Float(str)
     end
 
-    set_singleton
+    set_singleton!
+    json_value!
   end
-
-
-  class Hash < Serializer
-    def initialize
-      super(::Hash)
-    end
-
-    def load(str)
-      JSON.parse(str)
-    end
-
-    def dump(val)
-      matches_type!(val)
-      JSON.dump(val)
-    end
-
-    set_singleton
-  end
-
 
   # Abstract serializer for ISO8601 dates and times
   class ISO8601 < Serializer
@@ -145,7 +143,7 @@ class Serializer
       clazz.parse(str)
     end
 
-    def dump(val)
+    def dump(val, json: nil)
       matches_type!(val)
       val.iso8601
     end
@@ -156,7 +154,7 @@ class Serializer
       super(::Date)
     end
 
-    set_singleton
+    set_singleton!
   end
 
 
@@ -165,7 +163,7 @@ class Serializer
       super(::Time)
     end
 
-    set_singleton
+    set_singleton!
   end
 
 
@@ -178,12 +176,12 @@ class Serializer
       TZInfo::Timezone.get(str)
     end
 
-    def dump(val)
+    def dump(val, json: nil)
       matches_type!(val)
       val.identifier
     end
 
-    set_singleton
+    set_singleton!
   end
 
 
@@ -197,18 +195,24 @@ class Serializer
     end
 
     def load(str)
+      str = JSON.parse(str) if str.is_a?(::String)
       matches_type!(str)
-      JSON.parse(str)
     end
 
-    def dump(val)
+    def dump(val, json: false)
       matches_type!(val)
-      JSON.dump(val)
+      if json
+        val
+      else
+        JSON.dump(val)
+      end
     end
 
     def matches_type!(val)
       JSON::Validator.validate!(schema, val, validate_schema: !Rails.env.production?)
     end
+
+    json_value!
   end
 
 
@@ -218,7 +222,7 @@ class Serializer
       clazz.value_of!(str)
     end
 
-    def dump(val)
+    def dump(val, json: nil)
       matches_type!(val)
       val.enum_constant
     end
@@ -234,7 +238,7 @@ class Serializer
       val
     end
 
-    def dump(val)
+    def dump(val, json: nil)
       matches_type!(val)
       val.name
     end
@@ -254,13 +258,8 @@ class Serializer
       val
     end
 
-    def dump(val)
-      matches_type!(val)
-      val
-    end
-
     def matches_type?(str)
-      str.is_a?(String) && @member_set.include?(str)
+      str.is_a?(::String) && @member_set.include?(str)
     end
   end
 end
