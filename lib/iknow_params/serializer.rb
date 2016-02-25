@@ -51,6 +51,12 @@ class Serializer
       @registry[name.to_s]
     end
 
+    def for!(name)
+      s = self.for(name)
+      raise ArgumentError.new("No serializer registered with name: '#{name}'") if s.nil?
+      s
+    end
+
     protected
 
     def register_serializer(name, serializer)

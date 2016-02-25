@@ -1,5 +1,7 @@
 require "active_support/concern"
 require "active_support/inflector"
+require "active_support/core_ext/object/blank"
+
 require "iknow_params/serializer"
 
 # IknowParams::Parser provides a mix-in for ActiveRecord controllers to parse input parameters.
@@ -23,7 +25,14 @@ module IknowParams::Parser
   # and normalize the input to another service without parsing it. A serializer
   # must be passed to use this option.
   def parse_param(param, with: nil, default: PARAM_REQUIRED, dump: false)
-    serializer = with
+    serializer =
+      case with
+      when String, Symbol
+        IknowParams::Serializer.for!(with)
+      else
+        with
+      end
+
     val = params[param]
 
     parse =
