@@ -1,4 +1,5 @@
 require 'active_support'
+require 'active_support/inflector'
 require 'active_support/core_ext/module/delegation'
 require 'tzinfo'
 
@@ -34,6 +35,7 @@ class Serializer
     true
   end
 
+  @registry = {}
   class << self
     delegate :load, :dump, to: :singleton
 
@@ -45,11 +47,22 @@ class Serializer
       false
     end
 
+    def for(name)
+      @registry[name.to_s]
+    end
+
+    protected
+
+    def register_serializer(name, serializer)
+      @registry[name] = serializer
+    end
+
     private
 
     def set_singleton!
       instance = self.new
       define_singleton_method(:singleton){ instance }
+      IknowParams::Serializer.register_serializer(self.name.demodulize, instance)
     end
 
     def json_value!
