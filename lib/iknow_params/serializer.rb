@@ -245,6 +245,12 @@ class Serializer
       matches_type!(val)
       val.enum_constant
     end
+
+    def matches_type?(val)
+      return true if super(val)
+      dc = clazz.dummy_class
+      dc.present? && val.is_a?(dc)
+    end
   end
 
   ## Abstract serializer for `renum` constants.
