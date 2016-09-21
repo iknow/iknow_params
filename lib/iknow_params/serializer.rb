@@ -203,6 +203,19 @@ class Serializer
     set_singleton!
   end
 
+  class UUID < String
+    def load(str)
+      matches_type!(str)
+      super
+    end
+
+    def matches_type?(str)
+      super && str =~ /[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}/i
+    end
+
+    set_singleton!
+    json_value!
+  end
 
   # Abstract serializer for JSON structures conforming to a specified
   # schema.
