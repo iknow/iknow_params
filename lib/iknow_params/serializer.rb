@@ -226,9 +226,10 @@ class Serializer
       super(nil)
     end
 
-    def load(str)
-      str = JSON.parse(str) if str.is_a?(::String)
-      matches_type!(str)
+    def load(structure)
+      structure = JSON.parse(structure) if structure.is_a?(::String)
+      matches_type!(structure)
+      structure
     end
 
     def dump(val, json: false)
