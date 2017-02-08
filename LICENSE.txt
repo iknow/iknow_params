@@ -1,4 +1,4 @@
-Copyright (c) 2016 Chris Andreae
+Copyright (c) 2016 DMM.com
 
 MIT License
 

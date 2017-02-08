@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = [""]
   spec.summary       = %q{Rails parameter parser for iKnow.}
   spec.description   = %q{}
-  spec.homepage      = ""
+  spec.homepage      = "http://github.com/iknow/iknow_params"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")
