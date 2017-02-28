@@ -82,7 +82,7 @@ class Serializer
     end
 
     def load(str)
-      raise ArgumentError.new("Invalid type, expected String") unless str.kind_of?(String)
+      raise ArgumentError.new("Invalid type, expected String") unless str.kind_of?(::String)
       str
     end
 
