@@ -8,7 +8,15 @@ require "iknow_params/serializer"
 module IknowParams::Parser
   extend ActiveSupport::Concern
 
-  class ParseError < Exception; end
+  class ParseError < Exception
+    attr_accessor :param, :value
+
+    def initialize(message, param, value)
+      super(message)
+      self.param = param
+      self.value = value
+    end
+  end
 
   PARAM_REQUIRED = Object.new
   BLANK = Object.new
@@ -37,13 +45,13 @@ module IknowParams::Parser
 
     parse =
         if val.nil?
-          raise ParseError.new("Required parameter '#{param}' missing") if default == PARAM_REQUIRED
+          raise ParseError.new("Required parameter '#{param}' missing", param, nil) if default == PARAM_REQUIRED
           default
         elsif serializer.present?
           begin
             serializer.load(val)
           rescue Exception => ex
-            raise ParseError.new("Invalid parameter '#{param}': '#{val.inspect}' - #{ex.message}")
+            raise ParseError.new("Invalid parameter '#{param}': '#{val.inspect}' - #{ex.message}", param, val)
           end
         else
           val
@@ -70,16 +78,16 @@ module IknowParams::Parser
 
     parses =
       if vals.nil?
-        raise ParseError.new("Required parameter '#{param}' missing") if default == PARAM_REQUIRED
+        raise ParseError.new("Required parameter '#{param}' missing", param, nil) if default == PARAM_REQUIRED
         default
       elsif !vals.is_a?(Array)
-        raise ParseError.new("Invalid type for parameter '#{param}': '#{vals.class.name}'")
+        raise ParseError.new("Invalid type for parameter '#{param}': '#{vals.class.name}'", param, vals)
       elsif serializer.present?
         vals.map do |val|
           begin
             serializer.load(val)
           rescue Exception => ex
-            raise ParseError.new("Invalid member in parameter '#{param}': '#{val.inspect}' - #{ex.message}")
+            raise ParseError.new("Invalid member in array parameter '#{param}': '#{val.inspect}' - #{ex.message}", param, val)
           end
         end
       else
