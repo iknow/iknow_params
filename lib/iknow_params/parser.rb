@@ -58,7 +58,14 @@ module IknowParams::Parser
 
   # Parse an array-typed param using the provided serializer for each member element.
   def parse_array_param(param, with: nil, default: PARAM_REQUIRED, dump: false)
-    serializer = with
+    serializer =
+      case with
+      when String, Symbol
+        IknowParams::Serializer.for!(with)
+      else
+        with
+      end
+
     vals = params[param]
 
     parses =
