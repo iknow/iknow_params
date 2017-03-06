@@ -228,7 +228,7 @@ class Serializer
     end
 
     def load(structure)
-      structure = structure.to_unsafe_h if structure.is_a?(ActionController::Parameters)
+      structure = convert_strong_parameters(structure)
       structure = JSON.parse(structure) if structure.is_a?(::String)
       matches_type!(structure)
       structure
@@ -248,6 +248,19 @@ class Serializer
     end
 
     json_value!
+
+    private
+
+    def convert_strong_parameters(structure)
+      case structure
+      when ActionController::Parameters
+        structure.to_unsafe_h
+      when Array
+        structure.dup.map { |x| convert_strong_parameters(x) }
+      else
+        structure
+      end
+    end
   end
 
 
