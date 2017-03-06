@@ -228,6 +228,7 @@ class Serializer
     end
 
     def load(structure)
+      structure = structure.to_unsafe_h if structure.is_a?(ActionController::Parameters)
       structure = JSON.parse(structure) if structure.is_a?(::String)
       matches_type!(structure)
       structure
