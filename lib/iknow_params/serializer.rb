@@ -2,6 +2,7 @@ require 'active_support'
 require 'active_support/inflector'
 require 'active_support/core_ext/module/delegation'
 require 'tzinfo'
+require 'json-schema'
 
 module IknowParams
 class Serializer
@@ -95,8 +96,11 @@ class Serializer
       super(::Integer)
     end
 
-    def load(str)
-      Integer(str)
+    # JSON only supports floats, so we have to accept a value
+    # which may have already been parsed into a Ruby Float or Integer.
+    def load(str_or_num)
+      raise ArgumentError.new("Invalid integer: #{str_or_num}") unless [::String, ::Integer].any? { |t| str_or_num.is_a?(t) }
+      Integer(str_or_num)
     end
 
     set_singleton!
@@ -110,7 +114,11 @@ class Serializer
     end
 
     def load(str)
-      Float(str)
+      begin
+        Float(str)
+      rescue TypeError => e
+        raise ArgumentError.new("Invalid type for conversion to Float")
+      end
     end
 
     set_singleton!
@@ -150,7 +158,11 @@ class Serializer
     end
 
     def load(str)
-      Float(str)
+      begin
+        Float(str)
+      rescue TypeError => e
+        raise ArgumentError.new("Invalid type for conversion to Numeric")
+      end
     end
 
     set_singleton!
@@ -160,7 +172,11 @@ class Serializer
   # Abstract serializer for ISO8601 dates and times
   class ISO8601 < Serializer
     def load(str)
-      clazz.parse(str)
+      begin
+        clazz.parse(str)
+      rescue TypeError => e
+        raise ArgumentError.new("Invalid type for conversion to #{clazz}")
+      end
     end
 
     def dump(val, json: nil)
@@ -193,7 +209,11 @@ class Serializer
     end
 
     def load(str)
-      TZInfo::Timezone.get(str)
+      begin
+        TZInfo::Timezone.get(str)
+      rescue TZInfo::InvalidTimezoneIdentifier => e
+        raise ArgumentError.new("Invalid identifier for TZINfo zone: #{str}")
+      end
     end
 
     def dump(val, json: nil)
@@ -211,7 +231,7 @@ class Serializer
     end
 
     def matches_type?(str)
-      super && str =~ /[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}/i
+      super && !!(str.match(/[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}/i))
     end
 
     set_singleton!
@@ -222,13 +242,13 @@ class Serializer
   # schema.
   class JsonWithSchema < Serializer
     attr_reader :schema
-    def initialize(schema)
-      @schema = schema
+    def initialize(schema, validate_schema: true)
+      @schema          = schema
+      @validate_schema = validate_schema
       super(nil)
     end
 
     def load(structure)
-      structure = convert_strong_parameters(structure)
       structure = JSON.parse(structure) if structure.is_a?(::String)
       matches_type!(structure)
       structure
@@ -243,22 +263,35 @@ class Serializer
       end
     end
 
-    def matches_type!(val)
-      JSON::Validator.validate!(schema, val, validate_schema: !Rails.env.production?)
+    def matches_type?(val)
+      JSON::Validator.validate(schema, val, validate_schema: @validate_schema)
     end
 
     json_value!
+  end
 
-    private
+  # Adds Rails conveniences
+  class JsonWithSchema
+    class Rails < JsonWithSchema
+      def initialize(schema)
+        super(schema, !Rails.env.production?)
+      end
 
-    def convert_strong_parameters(structure)
-      case structure
-      when ActionController::Parameters
-        structure.to_unsafe_h
-      when Array
-        structure.dup.map { |x| convert_strong_parameters(x) }
-      else
-        structure
+      def load(structure)
+        super(convert_strong_parameters(structure))
+      end
+
+      private
+
+      def convert_strong_parameters(structure)
+        case structure
+        when ActionController::Parameters
+          structure.to_unsafe_h
+        when Array
+          structure.dup.map { |x| convert_strong_parameters(x) }
+        else
+          structure
+        end
       end
     end
   end

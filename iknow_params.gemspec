@@ -20,9 +20,13 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "bundler", "~> 1.7"
   spec.add_development_dependency "rake", "~> 10.0"
+  spec.add_development_dependency "rspec", "~> 3.0"
+  spec.add_development_dependency "sqlite3"
 
   spec.add_development_dependency "byebug"
+  spec.add_development_dependency "appraisal"
 
-  spec.add_dependency "activesupport", "~> 5.0"
+  spec.add_dependency "activesupport", ">= 5.0", "< 5.2"
   spec.add_dependency "tzinfo"
+  spec.add_dependency "json-schema", "~> 2.8.0"
 end
