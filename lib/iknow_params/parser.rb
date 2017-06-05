@@ -58,7 +58,11 @@ module IknowParams::Parser
         end
 
     if dump && parse != BLANK
-      parse = serializer.dump(parse)
+      begin
+        parse = serializer.dump(parse)
+      rescue NoMethodError => ex
+        raise ParseError.new("Serializer '#{serializer}' can't dump param '#{param}' #{val.inspect} - #{ex.message}", param, val)
+      end
     end
 
     parse
