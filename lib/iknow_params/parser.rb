@@ -6,6 +6,8 @@ require "iknow_params/serializer"
 
 # IknowParams::Parser provides a mix-in for ActiveRecord controllers to parse input parameters.
 module IknowParams::Parser
+  require "iknow_params/parser/hash_parser"
+
   extend ActiveSupport::Concern
 
   class ParseError < Exception
@@ -20,6 +22,20 @@ module IknowParams::Parser
 
   PARAM_REQUIRED = Object.new
   BLANK = Object.new
+
+  class << self
+    def parse_hash(hash, &block)
+      HashParser.new(hash).parse(&block)
+    end
+
+    def parse_value(value, **args)
+      HashParser.new({ sentinel: value }).parse_param(:sentinel, **args)
+    end
+
+    def parse_values(values, **args)
+      HashParser.new({ sentinel: values }).parse_array_param(:sentinel, **args)
+    end
+  end
 
   # Parse the specified parameter, optionally deserializing with the provided
   # IKnowParams::Serializer. If the parameter is missing and no default is
