@@ -227,6 +227,31 @@ RSpec.describe IknowParams::Parser do
     end
   end
 
+  describe '.parse_hash' do
+    let(:hash) { { name: "1" } }
+
+    it "invokes parsers on an arbitrary hash" do
+      parsed = IknowParams::Parser.parse_hash(hash) do
+        parse_param(:name, with: :Integer)
+      end
+      expect(parsed).to eq(1)
+    end
+  end
+
+  describe '.parse_value' do
+    it "invokes parsers on an arbitrary value" do
+      parsed = IknowParams::Parser.parse_value("1", with: :Integer)
+      expect(parsed).to eq(1)
+    end
+  end
+
+  describe '.parse_values' do
+    it "invokes parsers on an array of arbitrary values" do
+      parsed = IknowParams::Parser.parse_values(["1", "2"], with: :Integer)
+      expect(parsed).to eq([1, 2])
+    end
+  end
+
   describe '#remove_blanks' do
     let(:parsed) do
       {"id" => 5,
