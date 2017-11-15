@@ -57,13 +57,13 @@ module IknowParams::Parser
         with
       end
 
-    val = params[param]
-
     parse =
-        if val.nil?
-          raise ParseError.new("Required parameter '#{param}' missing", param, nil) if default == PARAM_REQUIRED
-          default
-        elsif serializer.present?
+      if !params.has_key?(param)
+        raise ParseError.new("Required parameter '#{param}' missing", param, nil) if default == PARAM_REQUIRED
+        default
+      else
+        val = params[param]
+        if serializer.present?
           begin
             serializer.load(val)
           rescue Exception => ex
@@ -72,6 +72,7 @@ module IknowParams::Parser
         else
           val
         end
+      end
 
     if dump && parse != BLANK
       begin

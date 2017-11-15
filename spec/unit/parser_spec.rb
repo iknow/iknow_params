@@ -32,6 +32,13 @@ RSpec.describe IknowParams::Parser do
         expect { parsed }.to raise_error(IknowParams::Parser::ParseError)
       end
 
+      it "admits an explicit nil" do
+        @params = { name: nil }
+        @param = :name
+
+        expect(parsed).to eq(nil)
+      end
+
       context "with a default specified" do
         let(:default) { Object.new }
         let(:parsed) { Controller.new(@params).parse_param(@param, with: serializer, default: default) }
