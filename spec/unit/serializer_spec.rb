@@ -1,5 +1,8 @@
 require "spec_helper"
 
+require 'rails'
+require 'action_controller'
+
 RSpec.describe IknowParams::Serializer do
   shared_examples "a serializer" do
     it "can load its type from a string" do
@@ -154,7 +157,7 @@ RSpec.describe IknowParams::Serializer do
   # Test abstract JsonWithSchema serializer by making a real schema
   # and serializer for it.
 
-  class MyJsonSerializer < IknowParams::Serializer::JsonWithSchema
+  class MyRailsJsonSerializer < IknowParams::Serializer::JsonWithSchema::Rails
     def initialize
       schema = {"type" => "object", "required" => ["a"], "properties" => {"a" => {"type" => "integer"}}}
       super(schema)
@@ -163,8 +166,13 @@ RSpec.describe IknowParams::Serializer do
     set_singleton!
   end
 
-  describe MyJsonSerializer do
-    let(:valid_values)  { {'{"a": 5}' => {"a" => 5}, '{"a": 6}' => {"a" => 6}} }
+  describe MyRailsJsonSerializer do
+    let(:valid_values)  { {
+      '{"a": 5}' => {"a" => 5},
+      '{"a": 6}' => {"a" => 6},
+      ActionController::Parameters.new({"a" => 5}) => {"a" => 5}
+    } }
+
     let(:invalid_values) { ['{"a": "5"}', '{"b": 6}', '[]', '{}'] }
 
     let(:string_serializer) { :to_json }
