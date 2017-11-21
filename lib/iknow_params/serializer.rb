@@ -274,7 +274,7 @@ class Serializer
   class JsonWithSchema
     class Rails < JsonWithSchema
       def initialize(schema)
-        super(schema, !Rails.env.production?)
+        super(schema, validate_schema: !::Rails.env.production?)
       end
 
       def load(structure)
