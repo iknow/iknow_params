@@ -1,8 +1,8 @@
 dist: trusty
 language: ruby
 rvm:
-  - 2.3
   - 2.4
+  - 2.5
 gemfile:
   - gemfiles/activesupport_5_0.gemfile
   - gemfiles/activesupport_5_1.gemfile
