@@ -111,6 +111,19 @@ RSpec.describe IknowParams::Serializer do
     it_behaves_like "a non-JSON value serializer"
   end
 
+  describe IknowParams::Serializer::Duration do
+    let(:valid_values) { {
+      "P6DT1M"         => 6.days + 1.minute,
+      "P6Y5M4DT3H2M1S" => 6.years + 5.months + 4.days + 3.hours + 2.minutes + 1.second
+    } }
+    let(:invalid_values) { ["fish", {}, Object.new] }
+
+    let(:string_serializer) { :iso8601 }
+
+    it_behaves_like "a serializer"
+    it_behaves_like "a non-JSON value serializer"
+  end
+
   describe IknowParams::Serializer::Timezone do
     let(:valid_values)  {  {"Asia/Tokyo" => TZInfo::Timezone.get("Asia/Tokyo"), "Asia/Shanghai" => TZInfo::Timezone.get("Asia/Shanghai"), "Europe/Berlin" => TZInfo::Timezone.get("Europe/Berlin")} }
     let(:invalid_values) { ["Tokyo", {}, Object.new, "Eastern"] }
