@@ -1,4 +1,5 @@
 require 'active_support'
+require 'active_support/duration'
 require 'active_support/inflector'
 require 'active_support/core_ext/module/delegation'
 require 'tzinfo'
@@ -197,6 +198,15 @@ class Serializer
   class Time < ISO8601
     def initialize
       super(::Time)
+    end
+
+    set_singleton!
+  end
+
+
+  class Duration < ISO8601
+    def initialize
+      super(::ActiveSupport::Duration)
     end
 
     set_singleton!
