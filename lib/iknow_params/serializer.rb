@@ -122,7 +122,7 @@ class Serializer
 
     def load(str)
       Float(str)
-    rescue TypeError => _e
+    rescue TypeError, ArgumentError => _e
       raise LoadError.new("Invalid type for conversion to Float")
     end
 
@@ -162,7 +162,7 @@ class Serializer
 
     def load(str)
       Float(str)
-    rescue TypeError => _e
+    rescue TypeError, ArgumentError => _e
       raise LoadError.new("Invalid type for conversion to Numeric")
     end
 
@@ -174,7 +174,7 @@ class Serializer
   class ISO8601 < Serializer
     def load(str)
       clazz.parse(str)
-    rescue TypeError => _e
+    rescue TypeError, ArgumentError => _e
       raise LoadError.new("Invalid type for conversion to #{clazz}")
     end
 

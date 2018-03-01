@@ -15,18 +15,18 @@ RSpec.describe IknowParams::Serializer do
 
     it "raises an error when asked to load a bad value" do
       invalid_values.each do |invalid|
-        expect { described_class.load(invalid) }.to(raise_error(ArgumentError), "value was accepted: #{invalid}")
+        expect { described_class.load(invalid) }.to(raise_error(IknowParams::Serializer::LoadError), "value was accepted: #{invalid}")
       end
     end
 
     it "dumps to a string" do
-      valid_values.values.each do |parsed|
+      valid_values.each_value do |parsed|
         expect(described_class.singleton.dump(parsed)).to eq parsed.public_send(string_serializer)
       end
     end
 
     it "dumps to a string or JSON value when asked for JSON" do
-      valid_values.values.each do |parsed|
+      valid_values.each_value do |parsed|
         if described_class.json_value?
           expect(described_class.singleton.dump(parsed, json: true)).to eq parsed
         else
