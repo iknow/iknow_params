@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'active_support'
 require 'active_support/duration'
 require 'active_support/inflector'
@@ -7,6 +9,9 @@ require 'json-schema'
 
 module IknowParams
 class Serializer
+  class LoadError < ArgumentError; end
+  class DumpError < ArgumentError; end
+
   attr_reader :clazz
 
   def initialize(clazz)
@@ -15,14 +20,14 @@ class Serializer
 
   def dump(val, json: false)
     matches_type!(val)
-    if(json && self.class.json_value?)
+    if json && self.class.json_value?
       val
     else
       val.to_s
     end
   end
 
-  def load(val)
+  def load(_val)
     raise StandardError.new('unimplemented')
   end
 
@@ -30,9 +35,9 @@ class Serializer
     val.is_a?(clazz)
   end
 
-  def matches_type!(val)
+  def matches_type!(val, err: DumpError)
     unless matches_type?(val)
-      raise ArgumentError.new("Incorrect type for #{self.class.name}: #{val.inspect}:#{val.class.name}")
+      raise err.new("Incorrect type for #{self.class.name}: #{val.inspect}:#{val.class.name}")
     end
     true
   end
@@ -69,12 +74,12 @@ class Serializer
 
     def set_singleton!
       instance = self.new
-      define_singleton_method(:singleton){ instance }
+      define_singleton_method(:singleton) { instance }
       IknowParams::Serializer.register_serializer(self.name.demodulize, instance)
     end
 
     def json_value!
-      define_singleton_method(:json_value?){ true }
+      define_singleton_method(:json_value?) { true }
     end
   end
 
@@ -84,7 +89,7 @@ class Serializer
     end
 
     def load(str)
-      raise ArgumentError.new("Invalid type, expected String") unless str.kind_of?(::String)
+      matches_type!(str, err: LoadError)
       str
     end
 
@@ -100,14 +105,15 @@ class Serializer
     # JSON only supports floats, so we have to accept a value
     # which may have already been parsed into a Ruby Float or Integer.
     def load(str_or_num)
-      raise ArgumentError.new("Invalid integer: #{str_or_num}") unless [::String, ::Integer].any? { |t| str_or_num.is_a?(t) }
+      raise LoadError.new("Invalid integer: #{str_or_num}") unless [::String, ::Integer].any? { |t| str_or_num.is_a?(t) }
       Integer(str_or_num)
+    rescue ArgumentError => e
+      raise LoadError.new(e.message)
     end
 
     set_singleton!
     json_value!
   end
-
 
   class Float < Serializer
     def initialize
@@ -115,17 +121,14 @@ class Serializer
     end
 
     def load(str)
-      begin
-        Float(str)
-      rescue TypeError => e
-        raise ArgumentError.new("Invalid type for conversion to Float")
-      end
+      Float(str)
+    rescue TypeError => _e
+      raise LoadError.new("Invalid type for conversion to Float")
     end
 
     set_singleton!
     json_value!
   end
-
 
   class Boolean < Serializer
     def initialize
@@ -140,7 +143,7 @@ class Serializer
       elsif ['true', 'yes', 'on', true, '1', 1].include?(str)
         true
       else
-        raise ArgumentError.new("Invalid boolean: #{str.inspect}")
+        raise LoadError.new("Invalid boolean: #{str.inspect}")
       end
     end
 
@@ -152,18 +155,15 @@ class Serializer
     json_value!
   end
 
-
   class Numeric < Serializer
     def initialize
       super(::Numeric)
     end
 
     def load(str)
-      begin
-        Float(str)
-      rescue TypeError => e
-        raise ArgumentError.new("Invalid type for conversion to Numeric")
-      end
+      Float(str)
+    rescue TypeError => _e
+      raise LoadError.new("Invalid type for conversion to Numeric")
     end
 
     set_singleton!
@@ -173,11 +173,9 @@ class Serializer
   # Abstract serializer for ISO8601 dates and times
   class ISO8601 < Serializer
     def load(str)
-      begin
-        clazz.parse(str)
-      rescue TypeError => e
-        raise ArgumentError.new("Invalid type for conversion to #{clazz}")
-      end
+      clazz.parse(str)
+    rescue TypeError => _e
+      raise LoadError.new("Invalid type for conversion to #{clazz}")
     end
 
     def dump(val, json: nil)
@@ -194,7 +192,6 @@ class Serializer
     set_singleton!
   end
 
-
   class Time < ISO8601
     def initialize
       super(::Time)
@@ -202,7 +199,6 @@ class Serializer
 
     set_singleton!
   end
-
 
   class Duration < ISO8601
     def initialize
@@ -219,11 +215,9 @@ class Serializer
     end
 
     def load(str)
-      begin
-        TZInfo::Timezone.get(str)
-      rescue TZInfo::InvalidTimezoneIdentifier => e
-        raise ArgumentError.new("Invalid identifier for TZINfo zone: #{str}")
-      end
+      TZInfo::Timezone.get(str)
+    rescue TZInfo::InvalidTimezoneIdentifier => _e
+      raise LoadError.new("Invalid identifier for TZInfo zone: #{str}")
     end
 
     def dump(val, json: nil)
@@ -236,12 +230,12 @@ class Serializer
 
   class UUID < String
     def load(str)
-      matches_type!(str)
+      matches_type!(str, err: LoadError)
       super
     end
 
     def matches_type?(str)
-      super && !!(str.match(/[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}/i))
+      super && /[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}/i.match?(str)
     end
 
     set_singleton!
@@ -260,8 +254,10 @@ class Serializer
 
     def load(structure)
       structure = JSON.parse(structure) if structure.is_a?(::String)
-      matches_type!(structure)
+      matches_type!(structure, err: LoadError)
       structure
+    rescue JSON::ParserError => ex
+      raise LoadError.new("Invalid JSON: #{ex.message}")
     end
 
     def dump(val, json: false)
@@ -306,11 +302,14 @@ class Serializer
     end
   end
 
-
   ## Abstract serializer for `ActsAsEnum` constants.
   class ActsAsEnum < Serializer
     def load(str)
-      clazz.value_of!(str)
+      constant = clazz.value_of(str)
+      if constant.nil?
+        raise LoadError.new("Invalid #{clazz.name} member: '#{str}'")
+      end
+      constant
     end
 
     def dump(val, json: nil)
@@ -330,7 +329,7 @@ class Serializer
     def load(str)
       val = clazz.with_name(str)
       if val.nil?
-        raise ArgumentError.new("Invalid enumeration constant: '#{str}'")
+        raise LoadError.new("Invalid enumeration constant: '#{str}'")
       end
       val
     end
@@ -351,7 +350,7 @@ class Serializer
 
     def load(str)
       val = str.to_s.downcase
-      matches_type!(val)
+      matches_type!(val, err: LoadError)
       val
     end
 

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "active_support/core_ext/hash/indifferent_access"
 
 # Simple wrapper to use IknowParams::Parser to extract and verify content from
