@@ -10,7 +10,7 @@ module IknowParams::Parser
 
   extend ActiveSupport::Concern
 
-  class ParseError < Exception
+  class ParseError < RuntimeError
     attr_accessor :param, :value
 
     def initialize(message, param, value)
@@ -66,7 +66,7 @@ module IknowParams::Parser
         if serializer.present?
           begin
             serializer.load(val)
-          rescue Exception => ex
+          rescue IknowParams::Serializer::LoadError => ex
             raise ParseError.new("Invalid parameter '#{param}': '#{val.inspect}' - #{ex.message}", param, val)
           end
         else
@@ -107,7 +107,7 @@ module IknowParams::Parser
         vals.map do |val|
           begin
             serializer.load(val)
-          rescue Exception => ex
+          rescue IknowParams::Serializer::LoadError => ex
             raise ParseError.new("Invalid member in array parameter '#{param}': '#{val.inspect}' - #{ex.message}", param, val)
           end
         end
@@ -149,5 +149,4 @@ module IknowParams::Parser
       parse_param(param, with: serializer_class, default: default)
     end
   end
-
 end
