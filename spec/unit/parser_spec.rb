@@ -82,6 +82,12 @@ RSpec.describe IknowParams::Parser do
         expect(parsed).to eq 5
       end
 
+      it "registers a typed parse method" do
+        params = { id: "5" }
+        param  = :id
+        expect(Controller.new(params).parse_integer_param(param)).to eq 5
+      end
+
       it "requires the value" do
         @params = {name: "5"}
         @param  = :id
@@ -124,6 +130,18 @@ RSpec.describe IknowParams::Parser do
 
           expect(parsed).to eq "10"
         end
+      end
+    end
+
+    context "with a complex named serializer" do
+      class ThisInterestingType < IknowParams::Serializer::Integer
+        set_singleton!
+      end
+
+      it "registers a typed parse method" do
+        params = { id: "5" }
+        param  = :id
+        expect(Controller.new(params).parse_this_interesting_type_param(param)).to eq 5
       end
     end
   end
@@ -187,6 +205,12 @@ RSpec.describe IknowParams::Parser do
         @param  = :ids
 
         expect(parsed).to eq [4, 5]
+      end
+
+      it "registers a typed parse array method" do
+        params = { ids: ['4', '5'] }
+        param  = :ids
+        expect(Controller.new(params).parse_integer_array_param(param)).to eq [4, 5]
       end
 
       it "requires the value" do

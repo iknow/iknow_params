@@ -4,8 +4,6 @@ require "active_support/concern"
 require "active_support/inflector"
 require "active_support/core_ext/object/blank"
 
-require "iknow_params/serializer"
-
 # IknowParams::Parser provides a mix-in for ActiveRecord controllers to parse input parameters.
 module IknowParams::Parser
   require "iknow_params/parser/hash_parser"
@@ -144,11 +142,16 @@ module IknowParams::Parser
     end
   end
 
-  # Add default parse methods for each basic serializer class
-  ObjectSpace.each_object(IknowParams::Serializer.singleton_class).each do |serializer_class|
-    name = serializer_class.name.demodulize.underscore
-    define_method(:"parse_#{name}_param") do |param, default: PARAM_REQUIRED|
-      parse_param(param, with: serializer_class, default: default)
+  # Allow serializers to register themselves
+  def self.register_serializer(name, serializer)
+    define_method(:"parse_#{name.underscore}_param") do |param, default: PARAM_REQUIRED|
+      parse_param(param, with: serializer, default: default)
     end
+    define_method(:"parse_#{name.underscore}_array_param") do |param, default: PARAM_REQUIRED|
+      parse_array_param(param, with: serializer, default: default)
+    end
+
   end
 end
+
+require 'iknow_params/serializer'

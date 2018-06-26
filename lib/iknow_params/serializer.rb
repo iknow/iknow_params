@@ -9,6 +9,7 @@ require 'json-schema'
 
 module IknowParams
 class Serializer
+  require 'iknow_params/parser'
   class LoadError < ArgumentError; end
   class DumpError < ArgumentError; end
 
@@ -68,6 +69,7 @@ class Serializer
 
     def register_serializer(name, serializer)
       @registry[name] = serializer
+      IknowParams::Parser.register_serializer(name, serializer)
     end
 
     private
