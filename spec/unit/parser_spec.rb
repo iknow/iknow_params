@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'iknow_params/parser'
+require 'iknow_params'
 
 RSpec.describe IknowParams::Parser do
   class Controller

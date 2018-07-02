@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-require "spec_helper"
+require 'spec_helper'
+require 'iknow_params'
 
 require 'rails'
 require 'action_controller'

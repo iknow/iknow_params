@@ -150,8 +150,5 @@ module IknowParams::Parser
     define_method(:"parse_#{name.underscore}_array_param") do |param, default: PARAM_REQUIRED|
       parse_array_param(param, with: serializer, default: default)
     end
-
   end
 end
-
-require 'iknow_params/serializer'

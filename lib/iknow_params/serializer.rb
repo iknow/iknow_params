@@ -7,9 +7,7 @@ require 'active_support/core_ext/module/delegation'
 require 'tzinfo'
 require 'json-schema'
 
-module IknowParams
-class Serializer
-  require 'iknow_params/parser'
+class IknowParams::Serializer
   class LoadError < ArgumentError; end
   class DumpError < ArgumentError; end
 
@@ -85,7 +83,7 @@ class Serializer
     end
   end
 
-  class String < Serializer
+  class String < IknowParams::Serializer
     def initialize
       super(::String)
     end
@@ -99,7 +97,7 @@ class Serializer
     json_value!
   end
 
-  class Integer < Serializer
+  class Integer < IknowParams::Serializer
     def initialize
       super(::Integer)
     end
@@ -117,7 +115,7 @@ class Serializer
     json_value!
   end
 
-  class Float < Serializer
+  class Float < IknowParams::Serializer
     def initialize
       super(::Float)
     end
@@ -132,7 +130,7 @@ class Serializer
     json_value!
   end
 
-  class Boolean < Serializer
+  class Boolean < IknowParams::Serializer
     def initialize
       super(nil)
     end
@@ -157,7 +155,7 @@ class Serializer
     json_value!
   end
 
-  class Numeric < Serializer
+  class Numeric < IknowParams::Serializer
     def initialize
       super(::Numeric)
     end
@@ -173,7 +171,7 @@ class Serializer
   end
 
   # Abstract serializer for ISO8601 dates and times
-  class ISO8601 < Serializer
+  class ISO8601 < IknowParams::Serializer
     def load(str)
       clazz.parse(str)
     rescue TypeError, ArgumentError => _e
@@ -211,7 +209,7 @@ class Serializer
   end
 
 
-  class Timezone < Serializer
+  class Timezone < IknowParams::Serializer
     def initialize
       super(::TZInfo::Timezone)
     end
@@ -246,7 +244,7 @@ class Serializer
 
   # Abstract serializer for JSON structures conforming to a specified
   # schema.
-  class JsonWithSchema < Serializer
+  class JsonWithSchema < IknowParams::Serializer
     attr_reader :schema
     def initialize(schema, validate_schema: true)
       @schema          = schema
@@ -305,7 +303,7 @@ class Serializer
   end
 
   ## Abstract serializer for `ActsAsEnum` constants.
-  class ActsAsEnum < Serializer
+  class ActsAsEnum < IknowParams::Serializer
     def load(str)
       constant = clazz.value_of(str)
       if constant.nil?
@@ -327,7 +325,7 @@ class Serializer
   end
 
   ## Abstract serializer for `renum` constants.
-  class Renum < Serializer
+  class Renum < IknowParams::Serializer
     def load(str)
       val = clazz.with_name(str)
       if val.nil?
@@ -344,7 +342,7 @@ class Serializer
 
   # Abstract serializer for members of a fixed set of lowercase strings,
   # case-normalized on parse.
-  class StringEnum < Serializer
+  class StringEnum < IknowParams::Serializer
     def initialize(*members)
       @member_set = members.map(&:downcase).to_set.freeze
       super(nil)
@@ -360,5 +358,4 @@ class Serializer
       str.is_a?(::String) && @member_set.include?(str)
     end
   end
-end
 end
