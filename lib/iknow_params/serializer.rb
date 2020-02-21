@@ -344,18 +344,28 @@ class IknowParams::Serializer
   # case-normalized on parse.
   class StringEnum < IknowParams::Serializer
     def initialize(*members)
-      @member_set = members.map(&:downcase).to_set.freeze
+      @member_set = members.map { |s| normalize(s) }.to_set.freeze
       super(nil)
     end
 
     def load(str)
-      val = str.to_s.downcase
+      val = normalize(str.to_s)
       matches_type!(val, err: LoadError)
       val
     end
 
     def matches_type?(str)
       str.is_a?(::String) && @member_set.include?(str)
+    end
+
+    def normalize(str)
+      str.downcase
+    end
+  end
+
+  class CaseSensitiveStringEnum < StringEnum
+    def normalize(str)
+      str
     end
   end
 end
