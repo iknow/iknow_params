@@ -92,9 +92,9 @@ workflows:
           ruby-version: "2.6"
           gemfile: gemfiles/activesupport_5_2.gemfile
       - test:
-          name: 'ruby 2.6 ActiveSupport 6.0-beta'
+          name: 'ruby 2.6 ActiveSupport 6.0'
           ruby-version: "2.6"
-          gemfile: gemfiles/activesupport_6_0_beta.gemfile
+          gemfile: gemfiles/activesupport_6_0.gemfile
       - publish:
           filters:
             branches:
