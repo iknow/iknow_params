@@ -43,7 +43,7 @@ class IknowParams::Serializer
 
   @registry = {}
   class << self
-    delegate :load, :dump, to: :singleton
+    delegate :load, :dump, :matches_type?, :matches_type!, to: :singleton
 
     def singleton
       raise ArgumentError.new("Singleton instance not defined for abstract serializer '#{self.name}'")
