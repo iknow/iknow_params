@@ -83,6 +83,10 @@ class IknowParams::Serializer
     end
   end
 
+  require 'iknow_params/serializer/nullable'
+  require 'iknow_params/serializer/array_of'
+  require 'iknow_params/serializer/hash_of'
+
   class String < IknowParams::Serializer
     def initialize
       super(::String)
