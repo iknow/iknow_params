@@ -5,6 +5,8 @@ require 'iknow_params'
 
 require 'rails'
 require 'action_controller'
+require 'active_support/core_ext/numeric/time'
+require 'active_support/core_ext/integer/time'
 
 RSpec.describe IknowParams::Serializer do
   shared_examples "a serializer" do

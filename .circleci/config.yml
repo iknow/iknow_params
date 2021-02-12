@@ -5,7 +5,7 @@ executors:
     parameters:
       ruby-version:
         type: string
-        default: "2.6"
+        default: "3.0"
       gemfile:
         type: string
         default: "Gemfile"
@@ -84,17 +84,9 @@ workflows:
   build:
     jobs:
       - test:
-          name: 'ruby 2.5 ActiveSupport 5.2'
-          ruby-version: "2.5"
-          gemfile: gemfiles/activesupport_5_2.gemfile
-      - test:
-          name: 'ruby 2.6 ActiveSupport 5.2'
-          ruby-version: "2.6"
-          gemfile: gemfiles/activesupport_5_2.gemfile
-      - test:
-          name: 'ruby 2.6 ActiveSupport 6.0'
-          ruby-version: "2.6"
-          gemfile: gemfiles/activesupport_6_0.gemfile
+          name: 'ruby 3.0 ActiveSupport 6.1'
+          ruby-version: "3.0"
+          gemfile: gemfiles/activesupport_6_1.gemfile
       - publish:
           filters:
             branches:
