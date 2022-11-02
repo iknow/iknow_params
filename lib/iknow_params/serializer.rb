@@ -177,6 +177,8 @@ class IknowParams::Serializer
   # Abstract serializer for ISO8601 dates and times
   class ISO8601 < IknowParams::Serializer
     def load(str)
+      raise TypeError.new unless str.is_a?(::String)
+
       clazz.parse(str)
     rescue TypeError, ArgumentError => _e
       raise LoadError.new("Invalid type for conversion to #{clazz}")
