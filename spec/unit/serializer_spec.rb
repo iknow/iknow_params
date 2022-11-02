@@ -4,6 +4,7 @@ require 'spec_helper'
 require 'iknow_params'
 
 require 'rails'
+require 'active_support/core_ext'
 require 'action_controller'
 
 RSpec.describe IknowParams::Serializer do

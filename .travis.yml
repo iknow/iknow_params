@@ -1,8 +1,0 @@
-dist: trusty
-language: ruby
-rvm:
-  - 2.4
-gemfile:
-  - gemfiles/activesupport_5_2.gemfile
-notifications:
-  email: false
