@@ -237,7 +237,12 @@ class IknowParams::Serializer
   class UUID < String
     def load(str)
       matches_type!(str, err: LoadError)
-      super
+
+      # UUIDs in Ruby are typically represented as lower case strings,
+      # for example, as returned by SecureRandom.uuid. To avoid surprises,
+      # and ensure that two equivalent UUIDs are equal to each other, we
+      # canonicalize any provided strings to lower case.
+      super.downcase
     end
 
     def matches_type?(str)
