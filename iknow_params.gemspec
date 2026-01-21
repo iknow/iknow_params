@@ -35,5 +35,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "activesupport", "> 5.2.0"
   spec.add_dependency "tzinfo"
-  spec.add_dependency "json-schema", "~> 3.0.0"
+  spec.add_dependency "json-schema", "> 3.0.0"
 end
