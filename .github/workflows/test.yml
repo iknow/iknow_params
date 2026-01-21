@@ -16,16 +16,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby-version: ['2.7', '3.0', '3.1', '3.2']
         include:
-          - ruby-version: '2.7'
-            bundle-gemfile: gemfiles/activesupport_5_2.gemfile
-          - ruby-version: '3.0'
-            bundle-gemfile: gemfiles/activesupport_6_0.gemfile
-          - ruby-version: '3.1'
-            bundle-gemfile: gemfiles/activesupport_6_1.gemfile
+          # We test all relevant versions of rails, using the lowest, non-EOL,
+          # Ruby version required for that version of rails.
           - ruby-version: '3.2'
-            bundle-gemfile: gemfiles/activesupport_7_0.gemfile
+            activesupport-version: 7.1
+            bundle-gemfile: gemfiles/activesupport_7_1.gemfile
+          - ruby-version: '3.2'
+            activesupport-version: 7.2
+            bundle-gemfile: gemfiles/activesupport_7_2.gemfile
+          - ruby-version: '3.2'
+            activesupport-version: 8.0
+            bundle-gemfile: gemfiles/activesupport_8_0.gemfile
+          - ruby-version: '3.2'
+            activesupport-version: 8.1
+            bundle-gemfile: gemfiles/activesupport_8_1.gemfile
 
     env: # $BUNDLE_GEMFILE must be set at the job level, so it is set for all steps
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.bundle-gemfile }}
@@ -40,15 +45,15 @@ jobs:
     - name: Run tests
       run: bundle exec rspec --profile 10 --format RspecJunitFormatter --out test_results/rspec.xml --format progress
     - name: Upload result
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: rspec_${{ matrix.ruby-version }}.xml
+        name: rspec_${{ matrix.ruby-version }}_${{ matrix.activesupport-version }}.xml
         path: test_results/rspec.xml
     - name: Test Report
       uses: dorny/test-reporter@v1
       if: always()
       with:
-        name: Rspec Tests - ${{ matrix.ruby-version }}
+        name: Rspec Tests - ${{ matrix.ruby-version }}_${{ matrix.activesupport-version }}
         path: test_results/rspec.xml
         reporter: java-junit
