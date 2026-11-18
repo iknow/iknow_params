@@ -36,8 +36,9 @@ class IknowParams::Serializer
 
   def matches_type!(val, err: DumpError)
     unless matches_type?(val)
-      raise err.new("Incorrect type for #{self.class.name}: #{val.inspect}:#{val.class.name}")
+      raise err.new("Incorrect type for #{self.class.name}: #{val.class.name}")
     end
+
     true
   end
 
